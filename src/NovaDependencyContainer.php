@@ -71,11 +71,11 @@ class NovaDependencyContainer extends Field
         parent::resolveForDisplay($resource, $attribute);
 
         foreach ($this->meta['dependencies'] as $index => $dependency) {
-            if(array_key_exists('notEmpty', $dependency) && ! empty($resource->{$dependency['field']})) {
+            if (array_key_exists('notEmpty', $dependency) && !empty($resource->{$dependency['field']})) {
                 $this->meta['dependencies'][$index]['satisfied'] = true;
             }
 
-            if(array_key_exists('values', $dependency)) {
+            if (array_key_exists('values', $dependency)) {
             	foreach($dependency['values'] as $value) {
             	    if ($value == $resource->{$dependency['field']}) {
 		                $this->meta['dependencies'][$index]['satisfied'] = true;
@@ -122,10 +122,110 @@ class NovaDependencyContainer extends Field
         }
     }
 
+    /**
+     * Checks whether to add validation rules
+     *
+     * @param NovaRequest $request
+     * @return bool
+     */
+    protected function isDependenciesSatisfiedForValidationRules(NovaRequest $request)
+    {
+        if (!isset($this->meta['dependencies'])
+            || !is_array($this->meta['dependencies'])) {
+            return false;
+        }
+
+        $satisfiedCounts = 0;
+        foreach ($this->meta['dependencies'] as $index => $dependency) {
+            if (array_key_exists('notEmpty', $dependency) && !empty($request->has($dependency['field']))) {
+                $satisfiedCounts++;
+            }
+
+            if (array_key_exists('values', $dependency)) {
+                $satisfaction = 0;
+                foreach($dependency['values'] as $value)
+            	    if ($value == $request->get($dependency['field']))
+		                $satisfaction = 1;
+                $satisfiedCounts += $satisfaction;
+            }
+        }
+
+        return $satisfiedCounts == count($this->meta['dependencies']);
+    }
+
+    /**
+     * Get a rule set based on field property name
+     *
+     * @param NovaRequest $request
+     * @param string $propertyName
+     * @return array
+     */
+    protected function getSituationalRulesSet(NovaRequest $request, string $propertyName = 'rules')
+    {
+        $fieldsRules = [];
+        if (!$this->isDependenciesSatisfiedForValidationRules($request)
+            || !isset($this->meta['fields'])
+            || !is_array($this->meta['fields'])) {
+            return $fieldsRules;
+        }
+
+        /** @var Field $field */
+        foreach ($this->meta['fields'] as $field) {
+            $fieldsRules[$field->attribute] = is_callable($field->{$propertyName})
+                ? call_user_func($field->{$propertyName}, $request)
+                : $field->{$propertyName};
+        }
+
+        return $fieldsRules;
+    }
+
+    /**
+     * Get the validation rules for this field.
+     *
+     * @param NovaRequest $request
+     * @return array
+     */
+    public function getRules(NovaRequest $request)
+    {
+        return $this->getSituationalRulesSet($request);
+    }
+
+    /**
+     * Get the creation rules for this field.
+     *
+     * @param NovaRequest $request
+     * @return array|string
+     */
+    public function getCreationRules(NovaRequest $request)
+    {
+        $fieldsRules = $this->getSituationalRulesSet($request, 'creationRules');
+
+        return array_merge_recursive(
+            $this->getRules($request),
+            $fieldsRules
+        );
+    }
+
+    /**
+     * Get the update rules for this field.
+     *
+     * @param NovaRequest $request
+     * @return array
+     */
+    public function getUpdateRules(NovaRequest $request)
+    {
+        $fieldsRules = $this->getSituationalRulesSet($request, 'updateRules');
+
+        return array_merge_recursive(
+            $this->getRules($request),
+            $fieldsRules
+        );
+    }
+
 
     public function setWatchable($name, $path=null)
     {
         return $this->withMeta(['watchable' => (object) ['name' => $name, 'path' => $path]]);
     }
-    
+
 }
