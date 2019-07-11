@@ -32,6 +32,7 @@ class NovaDependencyContainer extends Field
 
         $this->withMeta(['fields' => $fields]);
         $this->withMeta(['dependencies' => []]);
+        $this->withMeta(['watchable' => (object) ['name' => 'value', 'path' => null]]);
     }
 
     /**
@@ -120,4 +121,11 @@ class NovaDependencyContainer extends Field
 
         }
     }
+
+
+    public function setWatchable($name, $path=null)
+    {
+        return $this->withMeta(['watchable' => (object) ['name' => $name, 'path' => $path]]);
+    }
+    
 }
