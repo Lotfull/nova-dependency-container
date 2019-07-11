@@ -57,11 +57,19 @@ trait HasDependencies
 
             $inputValue = $request->input($dependency[ 'field' ]);
 
-            if (array_key_exists('notEmpty', $dependency) && is_null($inputValue) || $inputValue != $dependency[ 'value' ]) {
-
+            if (array_key_exists('notEmpty', $dependency) && is_null($inputValue)) {
                 return false;
-
             }
+
+            $satisfaction = false;
+            foreach ($dependency['values'] as $value) {
+                if ($inputValue == $value) {
+                    $satisfaction = true;
+                    break;
+                }
+            }
+            if (!$satisfaction)
+                return false;
 
         }
 
