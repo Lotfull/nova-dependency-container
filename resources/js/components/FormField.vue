@@ -1,16 +1,16 @@
 <template>
-	<div v-if="dependenciesSatisfied">
-		<div v-for="childField in field.fields">
-			<component
-				:is="'form-' + childField.component"
-                :errors="errors"
-				:resource-id="resourceId"
-				:resource-name="resourceName"
-				:field="childField"
-				:ref="'field-' + childField.attribute"
-			/>
-		</div>
-	</div>
+    <div v-if="dependenciesSatisfied" style="display: contents">
+        <template v-for="childField in field.fields">
+            <component
+                    :is="'form-' + childField.component"
+                    :errors="errors"
+                    :resource-id="resourceId"
+                    :resource-name="resourceName"
+                    :field="childField"
+                    :ref="'field-' + childField.attribute"
+            />
+        </template>
+    </div>
 </template>
 
 <script>
