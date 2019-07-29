@@ -62,10 +62,12 @@ trait HasDependencies
             }
 
             $satisfaction = false;
-            foreach ($dependency['values'] as $value) {
-                if ($inputValue == $value) {
-                    $satisfaction = true;
-                    break;
+            if (isset($dependency['values'])) {
+                foreach ($dependency['values'] as $value) {
+                    if ($inputValue == $value) {
+                        $satisfaction = true;
+                        break;
+                    }
                 }
             }
             if (!$satisfaction)
